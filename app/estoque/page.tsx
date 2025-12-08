@@ -190,7 +190,7 @@ export default function EstoquePage() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 rounded-full">
+              <Button variant="outline" className="gap-2">
                 <User className="h-4 w-4" />
                 <span>{user.username}</span>
               </Button>

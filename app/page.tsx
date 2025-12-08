@@ -95,7 +95,6 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <Button 
               variant="outline" 
-              className="rounded-full"
               onClick={() => setLoginOpen(true)}
             >
               Login

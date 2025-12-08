@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { fetchStockData } from '@/lib/api'
 import type { StockData, StockItem } from '@/types/stock'
 import { useLocalStorage } from './useLocalStorage'
 
@@ -17,28 +16,17 @@ export function useStockData() {
     setLoading(true)
     setError(null)
     try {
-      const stockData = await fetchStockData()
-      if (stockData) {
-        // Mesclar dados da API com dados mock
-        const allItems = [...stockData.items, ...mockItems]
-        setData({
-          ...stockData,
-          items: allItems
-        })
-      } else {
-        // Se não houver dados da API, usar apenas mock
-        setData({
-          items: mockItems,
-          totalSold: 0,
-          totalBought: 0,
-          profit: 0,
-          transactions: []
-        })
-      }
+      // Usar apenas dados do localStorage
+      setData({
+        items: mockItems,
+        totalSold: 0,
+        totalBought: 0,
+        profit: 0,
+        transactions: []
+      })
     } catch (err) {
       setError('Erro ao carregar dados')
       console.error(err)
-      // Em caso de erro, usar apenas mock
       setData({
         items: mockItems,
         totalSold: 0,
