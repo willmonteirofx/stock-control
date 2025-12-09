@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Box, Settings, LogOut, User, ArrowLeft } from "lucide-react"
+import { Box, Settings, LogOut, User as UserIcon, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -111,7 +111,7 @@ export default function SettingsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
-                <User className="h-4 w-4" />
+                <UserIcon className="h-4 w-4" />
                 <span>{user.username}</span>
               </Button>
             </DropdownMenuTrigger>
