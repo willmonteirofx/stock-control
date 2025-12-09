@@ -1,16 +1,24 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Box, Settings, LogOut, User, Wallet, Package, TrendingUp, Calendar, Search } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { Settings, LogOut, User, TrendingUp, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useAuth } from "@/hooks/useAuth"
-import { useStockData } from "@/hooks/useStockData"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/dashboard/AppSidebar"
 import { SummaryWidget } from "@/components/dashboard/SummaryWidget"
+import { SalesChart } from "@/components/dashboard/SalesChart"
+import { Tutorial } from "@/components/dashboard/Tutorial"
+import { SettingsModal } from "@/components/dashboard/SettingsModal"
 import { formatCurrency } from "@/lib/formatters"
+import { getUserFromToken, isTokenExpired, getTokenExpirationTime, removeToken, getToken } from "@/lib/auth"
+import type { User } from "@/types/user"
+import type { StockData, StockItem } from "@/types/stock"
+
+const TUTORIAL_CLOSED_KEY = 'stockcontrol_tutorial_closed'
+const MOCK_STORAGE_KEY = 'stock_control_mock_items'
 
 interface ProductSale {
   name: string
@@ -27,8 +35,128 @@ interface DaySale {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, loading: authLoading, logout } = useAuth()
-  const { data: stockData, loading: dataLoading } = useStockData()
+  const [user, setUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [stockData, setStockData] = useState<StockData | null>(null)
+  const [dataLoading, setDataLoading] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Lógica de autenticação
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const tokenData = getUserFromToken()
+    
+    if (!tokenData) {
+      router.push('/')
+      return
+    }
+
+    const token = getToken()
+    
+    if (!token || isTokenExpired(token)) {
+      removeToken()
+      router.push('/')
+      return
+    }
+
+    setUser({ username: tokenData.username })
+    setAuthLoading(false)
+
+    // Setup auto logout
+    const expTime = getTokenExpirationTime(token)
+    if (expTime && expTime > 0) {
+      setTimeout(() => {
+        removeToken()
+        router.push('/')
+      }, expTime)
+    }
+  }, [router])
+
+  const logout = () => {
+    removeToken()
+    router.push('/')
+  }
+
+  // Lógica de stock data
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    setDataLoading(true)
+    try {
+      const storedItems = localStorage.getItem(MOCK_STORAGE_KEY)
+      const mockItems: StockItem[] = storedItems ? JSON.parse(storedItems) : []
+      
+      // Calcular totais das transações
+      const storedTransactions = localStorage.getItem('stock_control_transactions')
+      const transactions: string[] = storedTransactions ? JSON.parse(storedTransactions) : []
+      
+      let totalSold = 0
+      let totalBought = 0
+      let profit = 0
+
+      transactions.forEach(transaction => {
+        const sellMatch = transaction.match(/VENDA:\s*(.+?),\s*Qtd:\s*(\d+),\s*Preço:\s*R\$\s*([\d,]+)/i)
+        if (sellMatch) {
+          const quantity = parseInt(sellMatch[2])
+          const price = parseFloat(sellMatch[3].replace(',', '.'))
+          totalSold += price * quantity
+          profit += price * quantity
+        }
+        
+        const buyMatch = transaction.match(/COMPRA:\s*(.+?),\s*Qtd:\s*(\d+),\s*Preço:\s*R\$\s*([\d,]+)/i)
+        if (buyMatch) {
+          const quantity = parseInt(buyMatch[2])
+          const price = parseFloat(buyMatch[3].replace(',', '.'))
+          totalBought += price * quantity
+        }
+      })
+
+      setStockData({
+        items: mockItems,
+        totalSold,
+        totalBought,
+        profit,
+        transactions
+      })
+    } catch (err) {
+      console.error(err)
+      setStockData({
+        items: [],
+        totalSold: 0,
+        totalBought: 0,
+        profit: 0,
+        transactions: []
+      })
+    } finally {
+      setDataLoading(false)
+    }
+  }, [])
+  
+  // Gerenciar tutorial no localStorage
+  const [showTutorial, setShowTutorial] = useState(() => {
+    if (typeof window === 'undefined') return true
+    try {
+      const item = window.localStorage.getItem(TUTORIAL_CLOSED_KEY)
+      return item ? !JSON.parse(item) : true
+    } catch {
+      return true
+    }
+  })
+
+  const hideTutorial = () => {
+    setShowTutorial(false)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(TUTORIAL_CLOSED_KEY, JSON.stringify(true))
+    }
+  }
+
+  const showTutorialAgain = () => {
+    setShowTutorial(true)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(TUTORIAL_CLOSED_KEY, JSON.stringify(false))
+    }
+  }
 
   // Calcular produtos mais vendidos (top 10)
   const topProducts = useMemo(() => {
@@ -156,65 +284,52 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] pb-8">
-      <div className="container max-w-7xl mx-auto px-6">
-        {/* Navbar */}
-        <nav className="flex items-center justify-between py-6">
-          <div className="flex items-center gap-2">
-            <Box className="h-6 w-6 text-[#374e5e]" />
-            <span className="text-xl font-bold text-[#374e5e]">StockControl</span>
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <User className="h-4 w-4" />
-                <span>{user.username}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => router.push('/dashboard')}>
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-red-500">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </nav>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <div className="min-h-screen bg-[#f1f5f9] pb-8">
+          <div className="container max-w-7xl mx-auto px-6">
+            {/* Navbar */}
+            <nav className="flex items-center justify-between py-6">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger />
+              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <User className="h-4 w-4" />
+                    <span>{user.username}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurações
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="text-red-500">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </nav>
 
-        {/* Summary Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <SummaryWidget type="sold" value={stockData?.totalSold || 0} label="Vendido" />
-          <SummaryWidget type="profit" value={stockData?.profit || 0} label="Lucro" />
-          <SummaryWidget type="bought" value={stockData?.totalBought || 0} label="Comprado" />
-        </div>
+            {/* Summary Widgets */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <SummaryWidget type="sold" value={stockData?.totalSold || 0} label="Vendido" />
+              <SummaryWidget type="profit" value={stockData?.profit || 0} label="Lucro" />
+              <SummaryWidget type="bought" value={stockData?.totalBought || 0} label="Comprado" />
+            </div>
 
-        {/* Botões de Navegação Grandes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Link href="/vender">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-8 flex flex-col items-center justify-center text-center">
-                <Wallet className="h-16 w-16 text-blue-500 mb-4" />
-                <h3 className="text-2xl font-bold text-[#374e5e] mb-2">Vender</h3>
-                <p className="text-[#64748B]">Registre suas vendas rapidamente</p>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link href="/estoque">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-8 flex flex-col items-center justify-center text-center">
-                <Package className="h-16 w-16 text-green-500 mb-4" />
-                <h3 className="text-2xl font-bold text-[#374e5e] mb-2">Estoque</h3>
-                <p className="text-[#64748B]">Gerencie seu catálogo de produtos</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
+            {/* Tutorial */}
+            {showTutorial && <Tutorial onClose={hideTutorial} />}
+
+            {/* Gráfico de Vendas */}
+            <div className="mb-6">
+              <SalesChart />
+            </div>
 
         {/* Insights Section */}
         <div className="grid md:grid-cols-3 gap-6 mb-6">
@@ -320,7 +435,17 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+          </div>
+
+          {/* Settings Modal */}
+          <SettingsModal 
+            open={settingsOpen} 
+            onOpenChange={setSettingsOpen}
+            showTutorial={showTutorial}
+            onTutorialChange={(show) => show ? showTutorialAgain() : hideTutorial()}
+          />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

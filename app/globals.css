@@ -36,7 +36,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  
+
   /* Cores padronizadas da aplicação */
   --color-text-main: var(--text-main);
   --color-text-secondary: var(--text-secondary);
@@ -44,11 +44,11 @@
   --color-warning: var(--color-warning);
   --color-info: var(--color-info);
   --color-danger: var(--color-danger);
-  
+
   /* Fontes */
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  
+
   /* Tamanhos de fonte padronizados */
   --font-size-xs: 0.75rem;      /* 12px */
   --font-size-sm: 0.875rem;     /* 14px */
@@ -60,13 +60,13 @@
   --font-size-4xl: 2.25rem;     /* 36px */
   --font-size-5xl: 3rem;        /* 48px */
   --font-size-6xl: 3.75rem;     /* 60px */
-  
+
   /* Pesos de fonte padronizados */
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  
+
   /* Raio de borda */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -85,13 +85,13 @@
   --border-color: rgba(0,0,0,0.05);
   --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.05);
   --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
-  
+
   /* Status Colors - Padronizadas */
   --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-info: #3B82F6;
   --color-danger: #EF4444;
-  
+
   /* Tailwind CSS variables (mapeadas para o tema inspire) */
   --radius: 0.625rem;
   --background: var(--bg-color);
@@ -167,75 +167,75 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-sans), 'Plus Jakarta Sans', sans-serif;
+    font-family: var(--font-sans), 'Inter', sans-serif;
     font-weight: var(--font-weight-normal);
     font-size: var(--font-size-base);
     line-height: 1.5;
   }
-  
+
   /* Padronização de títulos */
   h1 {
     @apply text-5xl md:text-6xl font-bold;
     color: var(--text-main);
   }
-  
+
   h2 {
     @apply text-4xl font-bold;
     color: var(--text-main);
   }
-  
+
   h3 {
     @apply text-2xl font-bold;
     color: var(--text-main);
   }
-  
+
   h4 {
     @apply text-xl font-semibold;
     color: var(--text-main);
   }
-  
+
   h5 {
     @apply text-lg font-semibold;
     color: var(--text-main);
   }
-  
+
   h6 {
     @apply text-base font-semibold;
     color: var(--text-main);
   }
-  
+
   /* Padronização de textos */
   p {
     @apply text-base;
     color: var(--text-main);
   }
-  
+
   small {
     @apply text-sm;
     color: var(--text-secondary);
   }
-  
+
   /* Classes utilitárias para cores padronizadas */
   .text-main {
     color: var(--text-main);
   }
-  
+
   .text-secondary {
     color: var(--text-secondary);
   }
-  
+
   .text-success {
     color: var(--color-success);
   }
-  
+
   .text-warning {
     color: var(--color-warning);
   }
-  
+
   .text-info {
     color: var(--color-info);
   }
-  
+
   .text-danger {
     color: var(--color-danger);
   }
